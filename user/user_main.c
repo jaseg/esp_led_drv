@@ -27,6 +27,7 @@ some pictures of cats.
 #include "webpages-espfs.h"
 #include "cgiwebsocket.h"
 #include "cgi-test.h"
+#include "led_controller.h"
 
 //The example can print out the heap use every 3 seconds. You can use this to catch memory leaks.
 //#define SHOW_HEAP_USE
@@ -124,6 +125,7 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/led.tpl", cgiEspFsTemplate, tplLed},
 	{"/index.tpl", cgiEspFsTemplate, tplCounter},
 	{"/led.cgi", cgiLed, NULL},
+	{"/rgbw.cgi", cgiRgbw, NULL},
 #ifdef INCLUDE_FLASH_FNS
 	{"/flash/next", cgiGetFirmwareNext, &uploadParams},
 	{"/flash/upload", cgiUploadFirmware, &uploadParams},
@@ -166,6 +168,7 @@ static void ICACHE_FLASH_ATTR prHeapTimerCb(void *arg) {
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 void user_init(void) {
 	stdoutInit();
+    serial_init();
 	ioInit();
 	captdnsInit();
 

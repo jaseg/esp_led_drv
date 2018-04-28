@@ -12,7 +12,7 @@ ESP_SPI_FLASH_SIZE_K=1024
 #0: QIO, 1: QOUT, 2: DIO, 3: DOUT
 ESP_FLASH_MODE=0
 #0: 40MHz, 1: 26MHz, 2: 20MHz, 15: 80MHz
-ESP_FLASH_FREQ_DIV=0
+ESP_FLASH_FREQ_DIV=1
 
 
 ifeq ("$(OUTPUT_TYPE)","separate")
@@ -51,8 +51,8 @@ APPGEN		?= $(SDK_BASE)/tools/gen_appbin.py
 TARGET		= httpd
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES		= user
-EXTRA_INCDIR	= include libesphttpd/include
+MODULES		= user re1.5
+EXTRA_INCDIR	= include libesphttpd/include re1.5
 
 # libraries used in this project, mainly provided by the SDK
 LIBS		= c gcc hal phy pp net80211 wpa main lwip crypto
@@ -60,7 +60,7 @@ LIBS		= c gcc hal phy pp net80211 wpa main lwip crypto
 LIBS += esphttpd
 
 # compiler flags using during compilation of source files
-CFLAGS		= -Os -ggdb -std=gnu99 -Werror -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
+CFLAGS		= -Os -ggdb -std=gnu99 -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
 		-nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH \
 		-Wno-address
 
@@ -161,7 +161,7 @@ MODULE_INCDIR	:= $(addsuffix /include,$(INCDIR))
 ESP_FLASH_SIZE_IX=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),512:0 1024:2 2048:5 4096:6)
 ESPTOOL_FREQ=$(call maplookup,$(ESP_FLASH_FREQ_DIV),0:40m 1:26m 2:20m 0xf:80m 15:80m)
 ESPTOOL_MODE=$(call maplookup,$(ESP_FLASH_MODE),0:qio 1:qout 2:dio 3:dout)
-ESPTOOL_SIZE=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),512:4m 256:2m 1024:8m 2048:16m 4096:322m-c1)
+ESPTOOL_SIZE=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),512:4m 256:2m 1024:8m 2048:16m 4096:32m-c1)
 
 ESPTOOL_OPTS=--port $(ESPPORT) --baud $(ESPBAUD)
 ESPTOOL_FLASHDEF=--flash_freq $(ESPTOOL_FREQ) --flash_mode $(ESPTOOL_MODE) --flash_size $(ESPTOOL_SIZE)
