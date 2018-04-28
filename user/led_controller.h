@@ -30,6 +30,8 @@ struct framebuf {
     };
 };
 
+void hsv_to_rgb(int *r, int *g, int *b, int h, int s, int v);
+
 void led_ctrl_init(void);
 void send_packet_formatted(uint8_t *buf, int len);
 void send_framebuf(struct framebuf *fb);

@@ -55,7 +55,7 @@ MODULES		= user re1.5
 EXTRA_INCDIR	= include libesphttpd/include re1.5
 
 # libraries used in this project, mainly provided by the SDK
-LIBS		= c gcc hal phy pp net80211 wpa main lwip crypto
+LIBS		= c gcc hal phy pp net80211 wpa main lwip crypto m
 #Add in esphttpd lib
 LIBS += esphttpd
 

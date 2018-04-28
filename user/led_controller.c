@@ -1,6 +1,7 @@
 
 #include <esp8266.h>
 #include <uart_hw.h>
+#include <math.h>
 
 #include "led_controller.h"
 
@@ -97,5 +98,61 @@ void fade_channel(int ch, int duration_ms, enum fade_curve curve, struct channel
     };
     fade_start[ch] = current_framebuf.chs[ch];
     fade_start_time[ch] = system_get_time()/1000;
+}
+
+float fmodf(float a, float b) {
+    return (a - b * floor(a / b));
+}
+
+void hsv_to_rgb_f(float *r, float *g, float *b, float h, float s, float v) {
+    float c = v * s; /* Chroma */
+    float hp = fmodf(h / 60.0f, 6);
+    float x = c * (1 - fabsf(fmodf(hp, 2) - 1));
+    float m = v - c;
+
+    switch ((int)hp) {
+    case 0:
+        *r = c;
+        *g = x;
+        *b = 0;
+        break;
+    case 1:
+        *r = x;
+        *g = c;
+        *b = 0;
+        break;
+    case 2:
+        *r = 0;
+        *g = c;
+        *b = x;
+        break;
+    case 3:
+        *r = 0;
+        *g = x;
+        *b = c;
+        break;
+    case 4:
+        *r = x;
+        *g = 0;
+        *b = c;
+        break;
+    default:
+        *r = c;
+        *g = 0;
+        *b = x;
+        break;
+    }
+
+    *r += m;
+    *g += m;
+    *b += m;
+}
+
+void hsv_to_rgb(int *r, int *g, int *b, int h, int s, int v) {
+    float fr, fg, fb;
+    hsv_to_rgb_f(&fr, &fg, &fb, ((float)h)/65535.0f*360, ((float)s)/65535.0f, ((float)v)/65535.0f);
+    *r = (int)(fr*65535);
+    *g = (int)(fg*65535);
+    *b = (int)(fb*65535);
 }
 

@@ -79,22 +79,38 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
         }
         */
 
-        if (caps.colorsys.start != caps.colorsys.end && strncmp(caps.colorsys.start, "rgbw", 4)) {
-            msg = "Unsupported color space\n"; sc = 400;
-            goto errout;
-        }
-
-        if (!caps.v3.start) {
-            msg = "Not enough channels sent\n"; sc = 400;
-            goto errout;
-        }
-
         int v0 = atoi(caps.v0.start),
             v1 = atoi(caps.v1.start),
             v2 = atoi(caps.v2.start),
-            v3 = atoi(caps.v3.start);
+            v3 = 0;
 
-        if (v0 > 0xffff || v1 > 0xffff || v2 > 0xffff || v2 > 0xffff) {
+        if (v0 > 0xffff || v1 > 0xffff || v2 > 0xffff) {
+            msg = "Channel value too large\n"; sc = 400;
+            goto errout;
+        }
+
+        if (caps.colorsys.start == caps.colorsys.end || !strncmp(caps.colorsys.start, "rgbw", 4)) {
+            if (!caps.v3.start) {
+                msg = "Not enough channels sent\n"; sc = 400;
+                goto errout;
+            }
+
+            v3 = atoi(caps.v3.start);
+        } else {
+            if (strncmp(caps.colorsys.start, "hsv", 3)) {
+                msg = "Unsupported color space\n"; sc = 400;
+                goto errout;
+            }
+
+            if (caps.v3.start) {
+                msg = "Too many channels sent\n"; sc = 400;
+                goto errout;
+            }
+
+            hsv_to_rgb(&v0, &v1, &v2, v0, v1, v2);
+        }
+
+        if (v3 > 0xffff) {
             msg = "Channel value too large\n"; sc = 400;
             goto errout;
         }
