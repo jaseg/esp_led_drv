@@ -28,7 +28,7 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
     if (connData->conn == NULL) /* Connection aborted */
         return HTTPD_CGI_DONE;
 
-    const char *re_str = "^(rgb:|rgbw:|hsv:|raw:)?([0-9]+),([0-9]+),([0-9]+)(,([0-9]+))?(;fade:([0-9]+m?)s(:linear)?)?$";
+    const char *re_str = "^(rgb:|rgbw:|hsv:|hsvw:|raw:)?([0-9]+),([0-9]+),([0-9]+)(,([0-9]+))?(;fade:([0-9]+m?)s(:linear)?)?$";
     int size = re1_5_sizecode(re_str);
     if (size == -1) {
         msg = "regex error\n"; sc = 500;
@@ -90,9 +90,10 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
         }
 
         enum colorsys {
-            COLOR_RGB,
+            COLOR_RGB, /* RGB with mapping to W channel */
             COLOR_RGBW,
             COLOR_HSV,
+            COLOR_HSVW, /* HSV with mapping to W channel */
             COLOR_RAW
         } colorsys;
 
@@ -102,6 +103,8 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
             colorsys = COLOR_RGB;
         else if (!strncmp(caps.colorsys.start, "rgbw:", 5))
             colorsys = COLOR_RGBW;
+        else if (!strncmp(caps.colorsys.start, "hsvw:", 5))
+            colorsys = COLOR_HSVW;
         else if (!strncmp(caps.colorsys.start, "hsv:", 4))
             colorsys = COLOR_HSV;
         else if (!strncmp(caps.colorsys.start, "raw:", 4))
@@ -127,10 +130,7 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
             }
         }
 
-        if (colorsys == COLOR_RGB) {
-            msg = "Unsupported color space\n"; sc = 400;
-            goto errout;
-        } else if (colorsys == COLOR_HSV) {
+        if (colorsys == COLOR_HSV || colorsys == COLOR_HSVW) {
             hsv_to_rgb(&v0, &v1, &v2, v0, v1, v2);
         }
 
@@ -144,6 +144,16 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
         struct channel ch = (struct channel) {
             .r=v0, .g=v1, .b=v2, .w=v3
         };
+
+        if (colorsys == COLOR_HSV || colorsys == COLOR_RGB) {
+            int m = v0 < v1 ? v0 : v1;
+            m = m < v2 ? m : v2;
+            /* Proof-of-concept code only. */
+            v3 = m;
+            v0 -= m;
+            v1 -= m;
+            v2 -= m;
+        }
 
         if (caps.fade_cont.start) {
             int dur_ms = atoi(caps.fade_duration.start);
