@@ -168,7 +168,7 @@ static void ICACHE_FLASH_ATTR prHeapTimerCb(void *arg) {
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 void user_init(void) {
 	stdoutInit();
-    serial_init();
+    led_ctrl_init();
 	ioInit();
 	captdnsInit();
 
@@ -188,6 +188,7 @@ void user_init(void) {
 	os_timer_disarm(&websockTimer);
 	os_timer_setfn(&websockTimer, websockTimerCb, NULL);
 	os_timer_arm(&websockTimer, 1000, 1);
+
 	os_printf("\nReady\n");
 }
 
