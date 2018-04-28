@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "led_controller.h"
+#include "gammatable.h"
 
 #define NCH LED_NCH
 
@@ -151,8 +152,16 @@ void hsv_to_rgb_f(float *r, float *g, float *b, float h, float s, float v) {
 void hsv_to_rgb(int *r, int *g, int *b, int h, int s, int v) {
     float fr, fg, fb;
     hsv_to_rgb_f(&fr, &fg, &fb, ((float)h)/65535.0f*360, ((float)s)/65535.0f, ((float)v)/65535.0f);
-    *r = (int)(fr*65535);
-    *g = (int)(fg*65535);
-    *b = (int)(fb*65535);
+    *r = (int)((fr+0.5f)*65535);
+    *g = (int)((fg+0.5f)*65535);
+    *b = (int)((fb+0.5f)*65535);
+}
+
+uint16_t apply_gamma(uint16_t val) {
+    uint8_t valh = val>>8, vall = val&0xff;
+    uint16_t a = gammatable[valh], b = gammatable[valh+1];
+    uint16_t d = b - a;
+
+    return a + (((int)vall)*d/256);
 }
 

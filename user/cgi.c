@@ -28,7 +28,7 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
     if (connData->conn == NULL) /* Connection aborted */
         return HTTPD_CGI_DONE;
 
-    const char *re_str = "^(rgb:|rgbw:|hsv:)?([0-9]+),([0-9]+),([0-9]+)(,([0-9]+))?(;fade:([0-9]+m?)s(:linear)?)?$";
+    const char *re_str = "^(rgb:|rgbw:|hsv:|raw:)?([0-9]+),([0-9]+),([0-9]+)(,([0-9]+))?(;fade:([0-9]+m?)s(:linear)?)?$";
     int size = re1_5_sizecode(re_str);
     if (size == -1) {
         msg = "regex error\n"; sc = 500;
@@ -89,34 +89,60 @@ int ICACHE_FLASH_ATTR cgiRgbw(HttpdConnData *connData) {
             goto errout;
         }
 
-        if (caps.colorsys.start == caps.colorsys.end || !strncmp(caps.colorsys.start, "rgbw", 4)) {
+        enum colorsys {
+            COLOR_RGB,
+            COLOR_RGBW,
+            COLOR_HSV,
+            COLOR_RAW
+        } colorsys;
+
+        if (caps.colorsys.start == caps.colorsys.end)
+            colorsys = COLOR_RGB;
+        else if (!strncmp(caps.colorsys.start, "rgb:", 4))
+            colorsys = COLOR_RGB;
+        else if (!strncmp(caps.colorsys.start, "rgbw:", 5))
+            colorsys = COLOR_RGBW;
+        else if (!strncmp(caps.colorsys.start, "hsv:", 4))
+            colorsys = COLOR_HSV;
+        else if (!strncmp(caps.colorsys.start, "raw:", 4))
+            colorsys = COLOR_RAW;
+        else
+            colorsys = COLOR_RGB;
+
+        if (colorsys == COLOR_HSV || colorsys == COLOR_RGB) {
+            if (caps.v3.start) {
+                msg = "Too many channels sent\n"; sc = 400;
+                goto errout;
+            }
+        } else {
             if (!caps.v3.start) {
                 msg = "Not enough channels sent\n"; sc = 400;
                 goto errout;
             }
 
             v3 = atoi(caps.v3.start);
-        } else {
-            if (strncmp(caps.colorsys.start, "hsv", 3)) {
-                msg = "Unsupported color space\n"; sc = 400;
+            if (v3 > 0xffff) {
+                msg = "Channel value too large\n"; sc = 400;
                 goto errout;
             }
+        }
 
-            if (caps.v3.start) {
-                msg = "Too many channels sent\n"; sc = 400;
-                goto errout;
-            }
-
+        if (colorsys == COLOR_RGB) {
+            msg = "Unsupported color space\n"; sc = 400;
+            goto errout;
+        } else if (colorsys == COLOR_HSV) {
             hsv_to_rgb(&v0, &v1, &v2, v0, v1, v2);
         }
 
-        if (v3 > 0xffff) {
-            msg = "Channel value too large\n"; sc = 400;
-            goto errout;
+        if (colorsys != COLOR_RAW) {
+            v0 = apply_gamma(v0);
+            v1 = apply_gamma(v1);
+            v2 = apply_gamma(v2);
+            v3 = apply_gamma(v3);
         }
 
         struct channel ch = (struct channel) {
-            .r = v0, .g=v1, .b=v2, .w=v3
+            .r=v0, .g=v1, .b=v2, .w=v3
         };
 
         if (caps.fade_cont.start) {

@@ -44,6 +44,8 @@ enum fade_curve {
 void set_channel(int ch, struct channel value);
 void fade_channel(int ch, int duration_ms, enum fade_curve curve, struct channel value);
 
+uint16_t apply_gamma(uint16_t val);
+
 extern struct framebuf current_framebuf;
 
 #endif
